@@ -21,7 +21,7 @@
  * @license MIT
  *
  */
-class hideableColums 
+class hideableColumns 
 {
 	//will hold a list of all columns that will be hidden
 	private $columnsToHide=array();
@@ -78,6 +78,31 @@ class hideableColums
 			<?php
 			}
 			?>
+			
+			
+			//hide content of rows that are appended later
+			//whenever something is added to the table
+			document.getElementById("table").addEventListener('DOMNodeInserted', function(e)
+			{
+				//walk through all new rows
+				for (let rows of e.target.childNodes )
+				{
+					//walk through all cells in all new row
+					for (let cell of rows.childNodes )
+					{
+						<?php
+						//do actual hiding for each column seperately
+						foreach($this->columnsToHide as $columnToHide)
+						{	
+						?>
+							if(cell.id.indexOf("[<?php echo $columnToHide ?>]")>0)
+								cell.style.display="none";
+						<?php
+						}
+						?>
+					}
+				}
+			});
 		}
 		document.addEventListener('DOMContentLoaded', makeColumnsHideable);
 		
