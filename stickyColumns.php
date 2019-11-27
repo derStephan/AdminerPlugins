@@ -28,7 +28,7 @@
  *
  * Written in vanilla JavaScript, no jquery needed.
  * 
- * Tested with Adminer 4.7.5 in FireFox 70 and >5000 distinct values within one column without any performance degredation.
+ * Tested with Adminer 4.7.5 in FireFox 70.
  *
  * @author Stephan Herrmann, https://github.com/derStephan/AdminerPlugins
  * @license MIT
