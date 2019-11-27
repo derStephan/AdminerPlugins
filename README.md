@@ -28,7 +28,7 @@ NOTE: Will fetch values with line feeds as well but those will be converted by t
 
 ## hideableColumns
 
-This plugin helps working with tables with a lot of colums. Clicking the header of a column while holding the ALT-key hides the column. Hiding is kept when flipping the page. 
+This plugin helps working with tables with a lot of colums. Clicking the header of a column while holding the ALT-key hides the column. Columns are still hidden when using the form above the table (search or order) or flipping the page. 
 
 You can define columns that should not be hideable when adding the plugin.
 ```
