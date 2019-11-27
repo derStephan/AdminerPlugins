@@ -4,7 +4,7 @@
  * Make Columns in Data Table hideable
  * ===================================
  * This plugin helps working with tables with a lot of colums. Clicking the header of a column while holding the ALT-key hides the column. 
- * Hiding is kept when flipping the page. 
+ * Columns are still hidden when using the form above the table (search or order) or flipping the page. 
  * 
  * You can define columns that should not be hideable when enabling the plugin.
  * $plugins = array(
@@ -75,6 +75,13 @@ class hideableColumns
 						span.parentElement.parentElement.style.display="none";		
 					}
 				}
+				
+				//add column to the form above the table so this will be kept while searching or ordering
+				var newHideField=document.getElementById("form")[0].cloneNode();				
+				newHideField.name="hide[]";
+				newHideField.value="<?php echo $columnToHide ?>";
+				document.getElementById("form").appendChild(newHideField);
+				
 			<?php
 			}
 			?>
