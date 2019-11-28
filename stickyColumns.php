@@ -15,14 +15,14 @@
  * 
  * 2. you can define sticky columns for each fully qualified table seperately:
  *
- *		$stickyColumnsLeft=array(	"information_schema.TABLES"=>"TABLE_NAME",
- *									"mysql.user"=>"User");
+ *		$stickyColumnsLeft=array(	"information_schema.TABLES"=>"TABLE_NAME", //meaning: in database `information_schema` in table `TABLES` make column `TABLE_NAME` sticky to the left
+ *						"mysql.user"=>"User");
  *		$stickyColumnsRight=array(	"information_schema.TABLES"=>"CREATE_TIME",
- *									"mysql.proc"=>"created");	
- * 
- * 		$plugins = array(
- *			new stickyColumns(stickyColumnsLeft,stickyColumnsRight) 
- * 		);
+ *						"mysql.proc"=>"created");	
+ *
+ *		$plugins = array(
+ *			new stickyColumns($stickyColumnsLeft,$stickyColumnsRight) 
+ *		);
  *
  * If you want to stick your header on top of the window, you can define that in the third parameter (bool).
  *
@@ -119,7 +119,7 @@ class stickyColumns
 			//to prevent this, set the background-color of the body for all transparent cells.
 			//this should work for all themes that do not have a background-image. 
 			var bodyBackground=getComputedStyle(document.body).backgroundColor;
-			for (let cell  of document.querySelectorAll("#table tbody td" ) )
+			for (let cell of document.querySelectorAll("#table tbody td" ) )
 			{
 				if(getComputedStyle(cell).backgroundColor=="rgba(0, 0, 0, 0)")
 					cell.style.backgroundColor=bodyBackground;
