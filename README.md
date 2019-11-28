@@ -58,13 +58,13 @@ $plugins = array(
 2. you can define sticky columns for each fully qualified table seperately:
 
 ```
-$stickyColumnsLeft=array(	"information_schema.TABLES"=>"TABLE_NAME",
+$stickyColumnsLeft=array(	"information_schema.TABLES"=>"TABLE_NAME", //meaning: in database `information_schema` in table `TABLES` make column `TABLE_NAME` sticky to the left
 				"mysql.user"=>"User");
 $stickyColumnsRight=array(	"information_schema.TABLES"=>"CREATE_TIME",
 				"mysql.proc"=>"created");	
 
 $plugins = array(
-	new stickyColumns(stickyColumnsLeft,stickyColumnsRight) 
+	new stickyColumns($stickyColumnsLeft,$stickyColumnsRight) 
 );
 ```
 
