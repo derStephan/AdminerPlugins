@@ -29,11 +29,14 @@ class hideableColumns
 	//filter columns that may not be hidden.
 	public function __construct ($unHideableColums=array())
 	{
-		//filter URL for columns to hide.
-		foreach($_GET["hide"] as $columnToHide)
+		if(isset($_GET["hide"]))
 		{
-			if(!in_array($columnToHide, $unHideableColums))				
-				$this->columnsToHide[]=$columnToHide;
+			//filter URL for columns to hide.
+			foreach($_GET["hide"] as $columnToHide)
+			{
+				if(!in_array($columnToHide, $unHideableColums))				
+					$this->columnsToHide[]=$columnToHide;
+			}
 		}
 	}
 	
