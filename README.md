@@ -14,6 +14,13 @@ And don't forget to add the plugin "plugin" because it is required to run any ot
 Delivers Excel-like behaviour when filtering tables using the search-fields. 
 After selecting a column for search using the drop-down, all values in this column are fetched using AJAX and can be selected directly in the search text-field.
 
+When one or more columns are already set for search then all of those values will be respected when auto complete values are fetched from the database. This way, the search is refined with each selected column. 
+
+Example: 
+ - column `lastName` is selected with the value `Smith`
+ - the user selects column `firstName`
+ => only first names of all Smiths will be given for autocomplete 
+
 Written in vanilla JavaScript, no jquery needed.
 
 Tested with Adminer 4.7.5 in FireFox 70 and >5000 distinct values within one column without any performance degredation.
