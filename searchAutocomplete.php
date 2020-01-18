@@ -4,7 +4,13 @@
  * ================================
  * Delivers Excel-like behaviour when filtering tables using the search-fields. 
  * After selecting a column for search using the drop-down, all values in this column are fetched using AJAX and can be selected directly in the search text-field.
+ * When one or more columns are already set for search then these values will be respected when autocomplete values are fetched from the database. This way, the search is refined with each selected column. 
  * 
+ * Example: 
+ *  - column `lastName` is selected with the value `Smith`
+ *  - the user selects column `firstName`
+ *  => only first names of all Smiths will be given for autocomplete 
+ *
  * Written in vanilla JavaScript, no jquery needed.
  * 
  * Tested with Adminer 4.7.5 in FireFox 70 and >5000 distinct values within one column without any performance degredation.
@@ -22,12 +28,32 @@ class searchAutocomplete
 	{
 		if(isset($_POST["getAutoCompleteData"]))
 		{
+			//this will likely not use any indexes. So give up pretty quickly (5s). 
+			set_time_limit (5);
+			//if you fail, do it silently
+			error_reporting (0);
+			
 			//make safe against all kinds of threats
 			$column=preg_replace("/[^a-zA-Z0-9_-]/", "", $_POST["getAutoCompleteData"]);
 			$table=preg_replace("/[^a-zA-Z0-9_-]/", "", $_GET["select"]);
+			
+			unset($_POST["getAutoCompleteData"]);
+			
+			//each new search field refines the search for autocomplete
+			$whereSQL="";
+			foreach($_POST as $colum => $value)
+			{
+				$whereSQL.= " AND ". preg_replace("/[^a-zA-Z0-9_-]/", "", $colum)."=".q($value);
+			}
+			
+			//this will likely not use any indexes. Use carefully. 
+			if($whereSQL!="")
+				$whereSQL="WHERE 1 ".$whereSQL;
+			
 			//to order even text-columns naturally, us this ugly hack
 			$orderSQLforNaturalSort="`$column`+0<>0 DESC, `$column`+0, `$column`";		
-			echo json_encode(get_vals("SELECT DISTINCT `$column` FROM `$table` ORDER BY $orderSQLforNaturalSort"));
+			//deliver json
+			echo json_encode(get_vals("SELECT DISTINCT `$column` FROM `$table` $whereSQL ORDER BY $orderSQLforNaturalSort"));
 			//stop delivering anything...
 			die();
 		}
@@ -46,112 +72,140 @@ class searchAutocomplete
 		{
 			//get all search dropDowns
 			var searchFieldDropDowns=document.querySelectorAll('#fieldset-search select[name$="[col]"]');
-			
-			//none there, just skip it
-			if(searchFieldDropDowns.length==0)
-				return;
-			
+
 			for (let searchFieldDropDown of searchFieldDropDowns )
 			{	
 				//bind event to each dropDown 
 				searchFieldDropDown.addEventListener('ValueChange', populateAutocompleteDataList);
-				//get all values for each drop down right away to have the same user experience as after change 
-				populateAutocompleteDataList(searchFieldDropDown);
 			}
 			
-			//disable browser-integrated autocomplete, only use the existing values from the database
+			//get all search text fields
 			var searchFields=document.querySelectorAll('#fieldset-search input[name$="[val]"]');
 			for (let searchField of searchFields )
 			{
-				searchField.setAttribute("autocomplete", "off");				
+				//disable browser-integrated autocomplete, only use the existing values from the database
+				searchField.setAttribute("autocomplete", "off");
+				//bind event to each input 
+				searchField.addEventListener('mousedown', populateAutocompleteDataList);				
 			}
 			
 			//whenever a search is started, a new empty search row is added. 
 			//this will register changeEvents for any new search row
 			document.getElementById("fieldset-search").addEventListener('DOMNodeInserted', function(e)
 			{
+				//drop down
 				if(e.target.childNodes[0])
 					e.target.childNodes[0].addEventListener('ValueChange', populateAutocompleteDataList);
+				//text fields
+				if(e.target.childNodes[4])
+					e.target.childNodes[4].addEventListener('mousedown', populateAutocompleteDataList);
 			});
 		});
 		
-
 		function populateAutocompleteDataList(e)
 		{
-			//this function is invoked in 2 cases
-			//	1. on page load for each drop down field within search area
-			var wasDoneDuringPageLoad=true;
-			//		in this case the parameter e is an element
-			var element=e;
-			//the other way to invoke this functiion:
-			//	2. on change of any change within drop down fields within search area
-			//		in this case the parameter e is an event
-			if (e.target)
-			{
-				element=e.target;
-				wasDoneDuringPageLoad=false;
-			}
+			//column to be searched
+			var column="";
 			
-			//stop right here, if there was no column selected
-			if(e.value=="")
+			//called from text field
+			if(e.type=="mousedown")
+				column=e.target.parentElement.childNodes[0].value;
+			//called from drop down
+			if(e.type=="ValueChange")
+				column=e.target.value;			
+
+			//no column selected, stop.
+			if(column=="")
 				return;
 			
-			//check if there is a datalist for the respective column
-			//if not, create it and get all values from within the column
-			//data will only be fetched once per column, even if the same column is selected multiple times
-			if(!document.getElementById("autocompleteSource"+element.value))
-			{	
+			//create datalist object if it does not exist
+			if(!document.getElementById("autocompleteSource"))
+			{
 				//add datalist to searchfieldset. 
 				var dataList = document.createElement("datalist");
-				dataList.setAttribute("id", "autocompleteSource"+element.value);
+				dataList.setAttribute("id", "autocompleteSource");
 				document.getElementById("fieldset-search").appendChild(dataList);
-
-				//get all values in the column using ajax
-				var autoCompleteXHR = new XMLHttpRequest();
-				autoCompleteXHR.open("POST", "", true);
-				autoCompleteXHR.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-				//submit the column to get the values for
-				autoCompleteXHR.send("getAutoCompleteData="+element.value);
-				autoCompleteXHR.onreadystatechange = function() 
+			}
+			var dataList=document.getElementById("autocompleteSource");
+			
+			//if the last searched column was the same as now, do not bother the server again
+			if(dataList.getAttribute("column")==column)
+				return;
+			
+			//save to datalist which column is searched now.
+			dataList.setAttribute("column",column);
+			
+			//get all values of all other search fields for refined search
+			//this way we only see valid options in auto complete
+			var searchData="";
+			
+			//walk through all search text fields
+			var searchFieldInputs=document.querySelectorAll('#fieldset-search input[name$="[val]"]');
+			
+			for (let searchFieldInput of searchFieldInputs )
+			{	
+				//unbind datalist from all search text fields
+				searchFieldInput.setAttribute("list", "");
+				
+				//get column to the current search text field
+				var searchFieldColumn=searchFieldInput.parentElement.childNodes[0].value;
+				
+				//include in refined search only if the column is set
+				if(column != searchFieldColumn && searchFieldColumn != "")
 				{
-					if (this.readyState == 4 && this.status == 200) 
-					{
-						 // We're getting a json response so we convert it to an object
-						var response = JSON.parse( this.responseText ); 
-
-						// clear any previously loaded options in the datalist
-						dataList.innerHTML = "";
-
-						response.forEach(function(item) 
-						{
-							// Create a new <option> element.
-							var option = document.createElement('option');
-							option.value = item;
-
-							// attach the option to the datalist element
-							dataList.appendChild(option);
-						});
-					}
+					searchData+=searchFieldColumn+"="+searchFieldInput.value+"&";
 				}
 			}
 			
-			//get name of input field that corresponds to the drop-down
-			var searchFieldName=element.name.split(']')[0]+'][val]';			
-			var searchField=document.getElementsByName(searchFieldName)[0];		
 			
-			//assign new dataList to the input field.
-			searchField.setAttribute("list", "autocompleteSource"+element.value);
+			// clear any previously loaded options in the datalist
+			dataList.innerHTML = "";
+			
+			//get all values in the column using ajax
+			var autoCompleteXHR = new XMLHttpRequest();
+			autoCompleteXHR.open("POST", "", true);
+			autoCompleteXHR.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+			//submit
+			autoCompleteXHR.send("getAutoCompleteData=" + column+ "&" +searchData );
+			autoCompleteXHR.onreadystatechange = function() 
+			{
+				if (this.readyState == 4 && this.status == 200) 
+				{
+					 // We're expecting a json response so we convert it to an object
+					var response = JSON.parse( this.responseText ); 
 
-			//on change, put cursor into the text field. 
-			//this should open the autocomplete list immediately
-			if(!wasDoneDuringPageLoad)
-				searchField.focus();					
+					// clear any previously loaded options in the datalist
+					dataList.innerHTML = "";
+
+					response.forEach(function(item) 
+					{
+						// Create a new <option> element.
+						var option = document.createElement('option');
+						option.value = item;
+
+						// attach the option to the datalist element
+						dataList.appendChild(option);
+					});
+				}
+			}
+			
+			//bind the datalist to the text field. 
+			
+			//if this event is fired from search text field
+			if(e.type=="mousedown")
+			{
+				e.target.setAttribute("list", "autocompleteSource");
+				e.target.focus();
+			}
+			//if this event is fired from drop down
+			if(e.type=="ValueChange")
+			{
+				e.target.parentElement.childNodes[4].blur();
+				e.target.parentElement.childNodes[4].setAttribute("list", "autocompleteSource");
+				e.target.parentElement.childNodes[4].focus();
+			}
 		}
-		
 		</script>
 	<?php
-	
 	}
-
-
 }
