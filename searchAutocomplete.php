@@ -13,7 +13,7 @@
  *
  * Written in vanilla JavaScript, no jquery needed.
  * 
- * Tested with Adminer 4.7.5 in FireFox 70 and >5000 distinct values within one column without any performance degredation.
+ * Tested with Adminer 4.7.5 on MySQL in FireFox 70  and >5000 distinct values within one column without any performance degredation.
  * 
  * NOTE: Will fetch values with line feeds as well but those will be converted by the browser to single lines due to the features of the input field. So the search won't find the values in these cases. This is not this plugin's fault.
  *
@@ -21,17 +21,18 @@
  * @license MIT
  *
  */
-class searchAutocomplete 
-{
+class searchAutocomplete
+{	
 	//react to ajax-requests with json
 	public function headers() 
 	{
+		
 		if(isset($_POST["getAutoCompleteData"]))
-		{
+		{			
 			//this will likely not use any indexes. So give up pretty quickly (5s). 
 			set_time_limit (5);
 			//if you fail, do it silently
-			error_reporting (0);
+			//error_reporting (0);
 			
 			//make safe against all kinds of threats
 			$column=preg_replace("/[^a-zA-Z0-9_-]/", "", $_POST["getAutoCompleteData"]);
@@ -39,18 +40,41 @@ class searchAutocomplete
 			
 			unset($_POST["getAutoCompleteData"]);
 			
+			$where= array();
+			
 			//each new search field refines the search for autocomplete
-			$whereSQL="";
-			foreach($_POST as $colum => $value)
+			//reuse relevant parts of Adminer::selectSearchProcess. Just using static method won't work.
+			//get SQL from operation-selection.
+			foreach ((array) $_POST["where"] as $key => $val) 
 			{
-				$whereSQL.= " AND ". preg_replace("/[^a-zA-Z0-9_-]/", "", $colum)."=".q($value);
-			}
-			
-			//this will likely not use any indexes. Use carefully. 
-			if($whereSQL!="")
-				$whereSQL="WHERE 1 ".$whereSQL;
-			
-			//to order even text-columns naturally, us this ugly hack
+				
+				$prefix = "";
+				$cond = " $val[op]";
+				if (preg_match('~IN$~', $val["op"])) {
+					$in = process_length($val["val"]);
+					$cond .= " " . ($in != "" ? $in : "(NULL)");
+				} elseif ($val["op"] == "SQL") {
+					$cond = " $val[val]"; // SQL injection
+				} elseif ($val["op"] == "LIKE %%") {
+					$cond = " LIKE " . Adminer::processInput($fields[$val["col"]], "%$val[val]%");
+				} elseif ($val["op"] == "ILIKE %%") {
+					$cond = " ILIKE " . Adminer::processInput($fields[$val["col"]], "%$val[val]%");
+				} elseif ($val["op"] == "FIND_IN_SET") {
+					$prefix = "$val[op](" . q($val["val"]) . ", ";
+					$cond = ")";
+				} elseif (!preg_match('~NULL$~', $val["op"])) {
+					$cond .= " " . Adminer::processInput($fields[$val["col"]], $val["val"]);
+				}
+				
+				$where[] = $prefix .  Min_SQL::convertSearch(idf_escape($val["col"]), $val, $fields[$val["col"]]) . $cond;
+			}	
+				
+			//this will likely not use any indexes. 
+			if($where)
+				$whereSQL= " WHERE " . implode(" AND ", $where);
+
+
+			//to order even text-columns naturally, use this ugly hack, this is tested in MySQL only. Sorry.
 			$orderSQLforNaturalSort="`$column`+0<>0 DESC, `$column`+0, `$column`";		
 			//deliver json
 			echo json_encode(get_vals("SELECT DISTINCT `$column` FROM `$table` $whereSQL ORDER BY $orderSQLforNaturalSort"));
@@ -141,22 +165,28 @@ class searchAutocomplete
 			
 			//walk through all search text fields
 			var searchFieldInputs=document.querySelectorAll('#fieldset-search input[name$="[val]"]');
-			
+			let whereCount=0;
 			for (let searchFieldInput of searchFieldInputs )
 			{	
+				
 				//unbind datalist from all search text fields
 				searchFieldInput.setAttribute("list", "");
 				
-				//get column to the current search text field
-				var searchFieldColumn=searchFieldInput.parentElement.childNodes[0].value;
-				
+				//get all information about the search
+				var searchFieldColumn=encodeURIComponent(searchFieldInput.parentElement.childNodes[0].value);
+				var searchFieldOperation=encodeURIComponent(searchFieldInput.parentElement.childNodes[2].value);
+				var searchFieldValue=encodeURIComponent(searchFieldInput.value);
+
 				//include in refined search only if the column is set
 				if(column != searchFieldColumn && searchFieldColumn != "")
 				{
-					searchData+=searchFieldColumn+"="+searchFieldInput.value+"&";
+					//build string for ajax request. This cannot be sent as an array, so I don't even bother.
+					searchData+="where["+whereCount+"][col]="+searchFieldColumn+"&where["+whereCount+"][op]="+searchFieldOperation+"&where["+whereCount+"][val]="+searchFieldValue+"&";
+					whereCount++;
 				}
+				
 			}
-			
+
 			
 			// clear any previously loaded options in the datalist
 			dataList.innerHTML = "";
