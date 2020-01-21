@@ -32,7 +32,7 @@ class searchAutocomplete
 			//this will likely not use any indexes. So give up pretty quickly (5s). 
 			set_time_limit (5);
 			//if you fail, do it silently
-			//error_reporting (0);
+			error_reporting (0);
 			
 			//make safe against all kinds of threats
 			$column=preg_replace("/[^a-zA-Z0-9_-]/", "", $_POST["getAutoCompleteData"]);
