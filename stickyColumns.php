@@ -28,7 +28,7 @@
  *
  * Written in vanilla JavaScript, no jquery needed.
  * 
- * Tested with Adminer 4.7.5 in FireFox 70.
+ * Tested with Adminer 4.7.5 in FireFox 70 and Chrome 79.
  *
  * @author Stephan Herrmann, https://github.com/derStephan/AdminerPlugins
  * @license MIT
@@ -81,7 +81,7 @@ class stickyColumns
 			echo "#table tbody td[id$='[{$this->stickyColumnRight}]']{position:sticky;right:0px;z-index:2;border-left: 1px solid;} ";
 		//make header sticky. 
 		if($this->stickyHeader)	
-			echo "#table thead {overflow: visible; position:sticky;top: 0;z-index:3;}";	
+			echo "#table thead * {overflow: visible; position:sticky;top: 0;z-index:3;}";	
 		echo "</style>";
 		
 		?>
