@@ -13,7 +13,7 @@
  *
  * Written in vanilla JavaScript, no jquery needed.
  * 
- * Tested with Adminer 4.7.5 on MySQL in FireFox 70  and >5000 distinct values within one column without any performance degredation.
+ * Tested with Adminer 4.8.1 in PHP8.0 on MySQL in FireFox 90  and >5000 distinct values within one column without any performance degredation.
  * 
  * NOTE: Will fetch values with line feeds as well but those will be converted by the browser to single lines due to the features of the input field. So the search won't find the values in these cases. This is not this plugin's fault.
  *
@@ -26,13 +26,13 @@ class searchAutocomplete
 	//react to ajax-requests with json
 	public function headers() 
 	{
-		
+		global $driver;
 		if(isset($_POST["getAutoCompleteData"]))
 		{			
 			//this will likely not use any indexes. So give up pretty quickly (5s). 
 			set_time_limit (5);
 			//if you fail, do it silently
-			error_reporting (0);
+			//error_reporting (0);
 			
 			//make safe against all kinds of threats
 			$column=preg_replace("/[^a-zA-Z0-9_-]/", "", $_POST["getAutoCompleteData"]);
@@ -41,10 +41,12 @@ class searchAutocomplete
 			unset($_POST["getAutoCompleteData"]);
 			
 			$where= array();
+			$fields=array();
 			
 			//each new search field refines the search for autocomplete
 			//reuse relevant parts of Adminer::selectSearchProcess. Just using static method won't work.
 			//get SQL from operation-selection.
+			$adminer=new Adminer();
 			foreach ((array) $_POST["where"] as $key => $val) 
 			{
 				
@@ -56,20 +58,22 @@ class searchAutocomplete
 				} elseif ($val["op"] == "SQL") {
 					$cond = " $val[val]"; // SQL injection
 				} elseif ($val["op"] == "LIKE %%") {
-					$cond = " LIKE " . Adminer::processInput($fields[$val["col"]], "%$val[val]%");
+					$cond = " LIKE " . $adminer->processInput($fields[$val["col"]], "%$val[val]%");
 				} elseif ($val["op"] == "ILIKE %%") {
-					$cond = " ILIKE " . Adminer::processInput($fields[$val["col"]], "%$val[val]%");
+					$cond = " ILIKE " . $adminer->processInput($fields[$val["col"]], "%$val[val]%");
 				} elseif ($val["op"] == "FIND_IN_SET") {
 					$prefix = "$val[op](" . q($val["val"]) . ", ";
 					$cond = ")";
 				} elseif (!preg_match('~NULL$~', $val["op"])) {
-					$cond .= " " . Adminer::processInput($fields[$val["col"]], $val["val"]);
+					$cond .= " " . $adminer->processInput($fields[$val["col"]], $val["val"]);
 				}
 				
-				$where[] = $prefix .  Min_SQL::convertSearch(idf_escape($val["col"]), $val, $fields[$val["col"]]) . $cond;
+				$Min_SQL=new Min_SQL(null );				
+				$where[] = $prefix .  $Min_SQL->convertSearch(idf_escape($val["col"]), $val, $fields[$val["col"]]) . $cond;
 			}	
 				
 			//this will likely not use any indexes. 
+			$whereSQL="";
 			if($where)
 				$whereSQL= " WHERE " . implode(" AND ", $where);
 
