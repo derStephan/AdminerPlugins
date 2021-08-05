@@ -23,7 +23,7 @@ Example:
 
 Written in vanilla JavaScript, no jquery needed.
 
-Tested with Adminer 4.7.5 in FireFox 70 and >5000 distinct values within one column without any performance degredation.
+Tested with Adminer 4.8.1 with PHP8.0 and mySQL 8 in FireFox 90 and >5000 distinct values within one column without any performance degredation.
 
 NOTE: Will fetch values with line feeds as well but those will be converted by the browser to single lines due to the features of the input field. So the search won't find the values in these cases. This is not this plugin's fault. 
 
