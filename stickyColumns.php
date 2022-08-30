@@ -28,7 +28,7 @@
  *
  * Written in vanilla JavaScript, no jquery needed.
  * 
- * Tested with Adminer 4.7.5 in FireFox 70 and Chrome 79.
+ * Tested with Adminer 4.8.1 with PHP8.1 in FireFox 104 and Chrome 104.
  *
  * @author Stephan Herrmann, https://github.com/derStephan/AdminerPlugins
  * @license MIT
