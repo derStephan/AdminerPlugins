@@ -13,7 +13,7 @@
  * 
  * Written in vanilla JavaScript, no jquery needed.
  * 
- * Tested with Adminer 4.7.5 in FireFox 70.
+ * Tested with Adminer 4.8.1 in FireFox 104.
  * 
  * NOTE: This is not a security feature! The full table is loaded in any case, hiding is done in Javascript. 
  *
