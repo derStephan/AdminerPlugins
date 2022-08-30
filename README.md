@@ -23,7 +23,7 @@ Example:
 
 Written in vanilla JavaScript, no jquery needed.
 
-Tested with Adminer 4.8.1 with PHP8.0 and mySQL 8 in FireFox 90 and >5000 distinct values within one column without any performance degredation.
+Tested with Adminer 4.8.1 with PHP8.1 and mySQL 8 in FireFox 104 and >5000 distinct values within one column without any performance degredation.
 
 NOTE: Will fetch values with line feeds as well but those will be converted by the browser to single lines due to the features of the input field. So the search won't find the values in these cases. This is not this plugin's fault. 
 
@@ -42,7 +42,7 @@ $plugins = array(
 
 Written in vanilla JavaScript, no jquery needed.
 
-Tested with Adminer 4.7.5 in FireFox 70.
+Tested with Adminer 4.81 in FireFox 104.
 
 NOTE: This is not a security feature! The full table is loaded in any case, hiding is done in Javascript. 
 
@@ -79,7 +79,7 @@ If you want to stick your header on top of the window, you can define that in th
 
 Written in vanilla JavaScript, no jquery needed.
 
-Tested with Adminer 4.7.5 in FireFox 70.
+Tested with Adminer 4.8.1 in FireFox 104.
 
 ![stickyColumns](https://user-images.githubusercontent.com/7764931/69730775-f8dfc500-1128-11ea-8255-06da4a5d4a32.gif)
 
