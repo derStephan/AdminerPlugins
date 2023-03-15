@@ -8,7 +8,7 @@
  * 
  * You can define columns that should not be hideable when enabling the plugin.
  * $plugins = array(
- *		new hideableColums(array('ID','userName')) //define columns that may not be hidden. 
+ *		new hideableColumns(array('ID','userName')) //define columns that may not be hidden. 
  * );
  * 
  * Written in vanilla JavaScript, no jquery needed.
