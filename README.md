@@ -36,7 +36,7 @@ This plugin helps working with tables with a lot of colums. Clicking the header 
 You can define columns that should not be hideable when adding the plugin.
 ```
 $plugins = array(
-	new hideableColums(array('ID','userName')) //define columns that may not be hidden. 
+	new hideableColumns(array('ID','userName')) //define columns that may not be hidden. 
 );
 ```
 
