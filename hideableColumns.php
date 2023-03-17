@@ -119,7 +119,7 @@ class hideableColumns
 		//react to click on Heading while holding Alt-Key.
 		function headerSpanClick(e)
 		{
-			if(event.altKey)
+			if(e.altKey)
 				window.location.href = '?<?php echo $_SERVER["QUERY_STRING"]?>&hide[]='+event.target.innerText;
 		}
 		</script>
