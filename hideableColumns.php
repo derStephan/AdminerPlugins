@@ -120,7 +120,10 @@ class hideableColumns
 		function headerSpanClick(e)
 		{
 			if(e.altKey)
-				window.location.href = '?<?php echo $_SERVER["QUERY_STRING"]?>&hide[]='+e.target.innerText;
+			{
+				e.preventDefault();
+				window.location.href = '?<?php echo $_SERVER["QUERY_STRING"]?>&hide[]='+event.target.innerText;
+			}
 		}
 		</script>
 		<?php
