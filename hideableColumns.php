@@ -48,7 +48,7 @@ class hideableColumns
 		
 		?>
 
-		<script <?php echo nonce()?> type='text/javascript'>
+		<script <?php echo Adminer\nonce()?> type='text/javascript'>
 		
 		//make columns hideable
 		function makeColumnsHideable()

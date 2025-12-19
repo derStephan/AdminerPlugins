@@ -86,7 +86,7 @@ class stickyColumns
 		
 		?>
 
-		<script <?php echo nonce()?> type='text/javascript'>
+		<script <?php echo Adminer\nonce()?> type='text/javascript'>
 		//make column headers of table sticky on the left and right.
 		//Due to lack of any ID in thead, this has to be done in JS
 		function makeColumnHeadersSticky()
